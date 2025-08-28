@@ -7,7 +7,7 @@ export const studentIDs = t.pgTable("student_ids", {
   name: t.varchar({ length: 255 }).notNull(),
 });
 
-export const students = t.pgTable("students", {
+export const student = t.pgTable("students", {
   id: t.bigserial({ mode: "number" }).primaryKey(),
   name: t.varchar({ length: 255 }).notNull(),
   surname: t.varchar({ length: 255 }).notNull(),
@@ -18,9 +18,9 @@ export const students = t.pgTable("students", {
   gender: t.varchar({ length: 255 }).notNull(),
 });
 
-export const studentRelations = relations(students, ({ one }) => ({
+export const studentRelations = relations(student, ({ one }) => ({
   studentIdRef: one(studentIDs, {
-    fields: [students.studentId],
+    fields: [student.studentId],
     references: [studentIDs.id],
   }),
 }));
