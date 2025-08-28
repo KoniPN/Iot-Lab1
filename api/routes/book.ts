@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import drizzle from "../db/drizzle.js";
-import { student, books } from "../db/schema.js"; // add books import
+import { students, books } from "../db/schema.js"; // fix import
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
@@ -10,18 +10,18 @@ const studentRouter = new Hono();
 const booksRouter = new Hono();
 
 studentRouter.get("/", async (c) => {
-  const allStudents = await drizzle.select().from(student); // rename variable
+  const allStudents = await drizzle.select().from(students); // fix table name
   return c.json(allStudents);
 });
 
 studentRouter.get("/:id", async (c) => {
   const id = Number(c.req.param("id"));
-  const result = await drizzle.query.student.findFirst({
-    where: eq(student.id, id),
-    // remove: with: { student: true },
+  const result = await drizzle.query.students.findFirst({
+    // fix table name
+    where: eq(students.id, id), // fix table name
   });
   if (!result) {
-    return c.json({ error: "Student not found" }, 404); // fix error message
+    return c.json({ error: "Student not found" }, 404);
   }
   return c.json(result);
 });
@@ -44,7 +44,7 @@ studentRouter.post(
     const { name, surname, birthdayAt, studentId, gender } =
       c.req.valid("json");
     const result = await drizzle
-      .insert(student)
+      .insert(students) // fix table name
       .values({
         name,
         surname,
@@ -53,7 +53,7 @@ studentRouter.post(
         studentId: studentId ?? null,
       })
       .returning();
-    return c.json({ success: true, student: result[0] }, 201); // fix key name
+    return c.json({ success: true, student: result[0] }, 201);
   }
 );
 
@@ -66,39 +66,37 @@ studentRouter.patch(
       surname: z.string().min(1).optional(),
       gender: z.string().min(1).optional(),
       birthdayAt: z.iso
-        .datetime({
-          offset: true,
-        })
+        .datetime({ offset: true })
         .optional()
         .transform((data) => (data ? dayjs(data).toDate() : undefined)),
-      studentId: z.number().int().optional().nullable().optional(),
+      studentId: z.number().int().optional().nullable(),
     })
   ),
   async (c) => {
     const id = Number(c.req.param("id"));
     const data = c.req.valid("json");
     const updated = await drizzle
-      .update(student)
+      .update(students) // fix table name
       .set(data)
-      .where(eq(student.id, id))
+      .where(eq(students.id, id)) // fix table name
       .returning();
     if (updated.length === 0) {
       return c.json({ error: "Student not found" }, 404);
     }
-    return c.json({ success: true, student: updated[0] }); // fix key name
+    return c.json({ success: true, student: updated[0] });
   }
 );
 
 studentRouter.delete("/:id", async (c) => {
   const id = Number(c.req.param("id"));
   const deleted = await drizzle
-    .delete(student)
-    .where(eq(student.id, id))
+    .delete(students) // fix table name
+    .where(eq(students.id, id)) // fix table name
     .returning();
   if (deleted.length === 0) {
     return c.json({ error: "Student not found" }, 404);
   }
-  return c.json({ success: true, student: deleted[0] }); // fix key name
+  return c.json({ success: true, student: deleted[0] });
 });
 
 booksRouter.get("/", async (c) => {
@@ -110,9 +108,13 @@ booksRouter.get("/:id", async (c) => {
   const id = Number(c.req.param("id"));
   const result = await drizzle.query.books.findFirst({
     where: eq(books.id, id),
-    with: { genre: true },
+    with: {
+      genre: true,
+    },
   });
-  if (!result) return c.json({ error: "Book not found" }, 404);
+  if (!result) {
+    return c.json({ error: "Book not found" }, 404);
+  }
   return c.json(result);
 });
 
@@ -125,7 +127,7 @@ booksRouter.post(
       author: z.string().min(1),
       publishedAt: z.iso
         .datetime({ offset: true })
-        .transform((data) => dayjs(data).unix()),
+        .transform((data) => dayjs(data).toDate()), // fix toDate
       genreId: z.number().int().optional().nullable(),
       description: z.string(),
       synopsis: z.string(),
@@ -142,7 +144,6 @@ booksRouter.post(
       synopsis,
       categories,
     } = c.req.valid("json");
-
     const result = await drizzle
       .insert(books)
       .values({
@@ -155,7 +156,6 @@ booksRouter.post(
         categories,
       })
       .returning();
-
     return c.json({ success: true, book: result[0] }, 201);
   }
 );
@@ -170,8 +170,8 @@ booksRouter.patch(
       publishedAt: z.iso
         .datetime({ offset: true })
         .optional()
-        .transform((data) => (data ? dayjs(data).unix() : undefined)),
-      genreId: z.number().int().optional().nullable().optional(),
+        .transform((data) => (data ? dayjs(data).toDate() : undefined)), // fix toDate
+      genreId: z.number().int().optional().nullable(),
       description: z.string().optional(),
       synopsis: z.string().optional(),
       categories: z.string().optional(),
@@ -185,7 +185,9 @@ booksRouter.patch(
       .set(data)
       .where(eq(books.id, id))
       .returning();
-    if (updated.length === 0) return c.json({ error: "Book not found" }, 404);
+    if (updated.length === 0) {
+      return c.json({ error: "Book not found" }, 404);
+    }
     return c.json({ success: true, book: updated[0] });
   }
 );
@@ -196,8 +198,10 @@ booksRouter.delete("/:id", async (c) => {
     .delete(books)
     .where(eq(books.id, id))
     .returning();
-  if (deleted.length === 0) return c.json({ error: "Book not found" }, 404);
+  if (deleted.length === 0) {
+    return c.json({ error: "Book not found" }, 404);
+  }
   return c.json({ success: true, book: deleted[0] });
 });
 
-export { studentRouter, booksRouter }; // single export statement
+export { studentRouter, booksRouter };
