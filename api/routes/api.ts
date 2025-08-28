@@ -20,5 +20,7 @@ apiRouter.use(
 );
 
 apiRouter.route("/student", studentRouter);
+apiRouter.route("/books", booksRouter);
+
 
 export default apiRouter;

@@ -40,3 +40,29 @@ export const studentRelations = relations(student, ({ one }) => ({
     references: [studentID.id],
   }),
 }));
+
+export const genres = t.sqliteTable("genres", {
+  id: t.integer().primaryKey({ autoIncrement: true }),
+  title: t.text().notNull(),
+});
+
+export const books = t.sqliteTable("books", {
+  id: t.integer().primaryKey({ autoIncrement: true }),
+  title: t.text().notNull(),
+  author: t.text().notNull(),
+  publishedAt: t.integer().notNull(),
+  description: t.text().notNull(),
+  synopsis: t.text().notNull(),
+  categories: t.text().notNull(),
+
+  genreId: t.integer().references(() => genres.id, {
+    onDelete: "set null",
+  }),
+});
+
+export const bookRelations = relations(books, ({ one }) => ({
+  genre: one(genres, {
+    fields: [books.genreId],
+    references: [genres.id],
+  }),
+}));
