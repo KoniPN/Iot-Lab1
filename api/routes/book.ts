@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import drizzle from "../db/drizzle.js";
-import { student } from "../db/schema.js";
+import { student, books } from "../db/schema.js"; // add books import
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
@@ -10,20 +10,18 @@ const studentRouter = new Hono();
 const booksRouter = new Hono();
 
 studentRouter.get("/", async (c) => {
-  const allBooks = await drizzle.select().from(student);
-  return c.json(allBooks);
+  const allStudents = await drizzle.select().from(student); // rename variable
+  return c.json(allStudents);
 });
 
 studentRouter.get("/:id", async (c) => {
   const id = Number(c.req.param("id"));
   const result = await drizzle.query.student.findFirst({
     where: eq(student.id, id),
-    with: {
-      student: true,
-    },
+    // remove: with: { student: true },
   });
   if (!result) {
-    return c.json({ error: "Book not found" }, 404);
+    return c.json({ error: "Student not found" }, 404); // fix error message
   }
   return c.json(result);
 });
@@ -55,7 +53,7 @@ studentRouter.post(
         studentId: studentId ?? null,
       })
       .returning();
-    return c.json({ success: true, book: result[0] }, 201);
+    return c.json({ success: true, student: result[0] }, 201); // fix key name
   }
 );
 
@@ -87,7 +85,7 @@ studentRouter.patch(
     if (updated.length === 0) {
       return c.json({ error: "Student not found" }, 404);
     }
-    return c.json({ success: true, book: updated[0] });
+    return c.json({ success: true, student: updated[0] }); // fix key name
   }
 );
 
@@ -100,10 +98,8 @@ studentRouter.delete("/:id", async (c) => {
   if (deleted.length === 0) {
     return c.json({ error: "Student not found" }, 404);
   }
-  return c.json({ success: true, book: deleted[0] });
+  return c.json({ success: true, student: deleted[0] }); // fix key name
 });
-
-export default studentRouter;
 
 booksRouter.get("/", async (c) => {
   const allBooks = await drizzle.select().from(books);
@@ -131,8 +127,6 @@ booksRouter.post(
         .datetime({ offset: true })
         .transform((data) => dayjs(data).unix()),
       genreId: z.number().int().optional().nullable(),
-
-      // เพิ่มเฉพาะที่จำเป็น: บังคับเป็น string
       description: z.string(),
       synopsis: z.string(),
       categories: z.string(),
@@ -156,8 +150,6 @@ booksRouter.post(
         author,
         publishedAt,
         genreId: genreId ?? null,
-
-        // ส่งฟิลด์ใหม่ลง DB
         description,
         synopsis,
         categories,
@@ -180,8 +172,6 @@ booksRouter.patch(
         .optional()
         .transform((data) => (data ? dayjs(data).unix() : undefined)),
       genreId: z.number().int().optional().nullable().optional(),
-
-      // เพิ่มเฉพาะที่จำเป็น: เป็น string ถ้าส่งมา
       description: z.string().optional(),
       synopsis: z.string().optional(),
       categories: z.string().optional(),
@@ -210,5 +200,4 @@ booksRouter.delete("/:id", async (c) => {
   return c.json({ success: true, book: deleted[0] });
 });
 
-export default booksRouter;
-
+export { studentRouter, booksRouter }; // single export statement

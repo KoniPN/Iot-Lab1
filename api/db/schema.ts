@@ -41,21 +41,20 @@ export const studentRelations = relations(student, ({ one }) => ({
   }),
 }));
 
-export const genres = t.sqliteTable("genres", {
-  id: t.integer().primaryKey({ autoIncrement: true }),
-  title: t.text().notNull(),
+export const genres = t.pgTable("genres", {
+  id: t.bigserial({ mode: "number" }).primaryKey(),
+  title: t.varchar({ length: 255 }).notNull(),
 });
 
-export const books = t.sqliteTable("books", {
-  id: t.integer().primaryKey({ autoIncrement: true }),
-  title: t.text().notNull(),
-  author: t.text().notNull(),
-  publishedAt: t.integer().notNull(),
+export const books = t.pgTable("books", {
+  id: t.bigserial({ mode: "number" }).primaryKey(),
+  title: t.varchar({ length: 255 }).notNull(),
+  author: t.varchar({ length: 255 }).notNull(),
+  publishedAt: t.bigint({ mode: "number" }).notNull(),
   description: t.text().notNull(),
   synopsis: t.text().notNull(),
   categories: t.text().notNull(),
-
-  genreId: t.integer().references(() => genres.id, {
+  genreId: t.bigint({ mode: "number" }).references(() => genres.id, {
     onDelete: "set null",
   }),
 });
